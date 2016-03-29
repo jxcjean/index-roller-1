@@ -155,8 +155,6 @@ def get_sina_stock_price(stock_code_list):  # http://hq.sinajs.cn/list=sh510050,
     if (len(content_string)>500):
         for i in range(0, len(stock_code_list)):
             each_index_list = content_list[i].split(',')
-            # print('each_index_list: ', each_index_list)
-            # print('each_index_list length: ', len(each_index_list))
             stock_dict = dict(
                 code=int(stock_code_list[i]),  # each_index_list[0],
                 open=float(each_index_list[1]),
@@ -331,14 +329,14 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 buy_price = get_price_buy(159915)
                 user.sell(str(159915),price=buy_price,amount=hold_stock_dict.get('amount159915'))  # 卖出
                 print('卖出持仓股票：159915，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount159915'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             else:
                 print('159915持仓为零')
             if (hold_stock_dict.get('amount150023') != 0):
                 buy_price = get_price_buy(150023)
                 user.sell(str(150023),price=buy_price,amount=hold_stock_dict.get('amount150023'))  # 卖出
                 print('卖出持仓股票：150023，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount150023'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             else:
                 print('150023持仓为零')
         elif (stock_code_buy==159915):
@@ -346,14 +344,14 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 buy_price = get_price_buy(510050)
                 user.sell(str(510050),price=buy_price,amount=hold_stock_dict.get('amount510050'))  # 卖出
                 print('卖出持仓股票：510050，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount510050'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             else:
                 print('510050持仓为零')
             if (hold_stock_dict.get('amount150023') != 0):
                 buy_price = get_price_buy(150023)
                 user.sell(str(150023),price=buy_price,amount=hold_stock_dict.get('amount150023'))  # 卖出
                 print('卖出持仓股票：150023，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount150023'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             else:
                 print('150023持仓为零')
         elif (stock_code_buy==150023):
@@ -361,14 +359,14 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 buy_price = get_price_buy(510050)
                 user.sell(str(510050),price=buy_price,amount=hold_stock_dict.get('amount510050'))  # 卖出
                 print('卖出持仓股票：510050，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount510050'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             else:
                 print('510050持仓为零')
             if (hold_stock_dict.get('amount159915') != 0):
                 buy_price = get_price_buy(159915)
                 user.sell(str(159915),price=buy_price,amount=hold_stock_dict.get('amount159915'))  # 卖出
                 print('卖出持仓股票：159915，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount159915'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             else:
                 print('159915持仓为零')
         elif (stock_code_buy==0):
@@ -376,17 +374,17 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 buy_price = get_price_buy(510050)
                 user.sell(str(510050),price=buy_price,amount=hold_stock_dict.get('amount510050'))  # 卖出
                 print('卖出持仓股票：510050，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount510050'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             if (hold_stock_dict.get('amount159915') != 0):
                 buy_price = get_price_buy(159915)
                 user.sell(str(159915),price=buy_price,amount=hold_stock_dict.get('amount159915'))  # 卖出
                 print('卖出持仓股票：159915，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount159915'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
             if (hold_stock_dict.get('amount150023') != 0):
                 buy_price = get_price_buy(150023)
                 user.sell(str(150023),price=buy_price,amount=hold_stock_dict.get('amount150023'))  # 卖出
                 print('卖出持仓股票：150023，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount150023'))
-                time.sleep(15)  #暂停进程，给卖出时间
+                time.sleep(20)  #暂停进程，给卖出时间
     sell_hold_stocks(stock_code_buy)
 
     # 获取资金状况
@@ -415,7 +413,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
         print('收到清仓指令“stock_code_buy=0”，已执行清仓，不买入')
     else:
         buy_aim_stock(stock_code_buy)
-        time.sleep(15)  #暂停进程，给买入时间
+        time.sleep(20)  #暂停进程，给买入时间
         cash_2 = get_enable_balance()  # 再次查询资产情况
         print('再次查询,判断是否再次买入，目前可交易现金：', cash_2)
         if (cash_2>1000):
@@ -764,7 +762,7 @@ def index_roller_auto():
                     print('Line618 交易额度有余，可以进行交易')
                     if (Hold_Code_Lst==0):  # 昨日空仓
                         if (DEAH_NOW < 0.000006):
-                            print('保持空仓')
+                            print('未达到建仓标准，保持空仓')
                         else:
                             print('建仓，持有指数：',DEAH_CODE_NOW)
                             cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(DEAH_ID_NOW)
