@@ -632,6 +632,7 @@ def get_db_network_data():
         price_date_150023 = sinaq.get('code150023').get('date')
         price_time_150023 = sinaq.get('code150023').get('time')
         if (price_now_510050 == 0) or (price_now_159915 == 0 ) or (price_now_150023 == 0):
+            print('510050:', price_now_510050, ' 159915:', price_now_159915, ' 150023:', price_now_150023)
             result_dict = ''
         else:
             result_dict= {'510050': {'now': price_now_510050, 'date': price_date_510050, 'time': price_time_510050},
