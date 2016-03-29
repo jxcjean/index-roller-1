@@ -6,6 +6,9 @@ import sqlite3
 from tkinter import *       #引用Tk模块
 import tkinter.messagebox
 import urllib.request
+#import matplotlib.pyplot as plt
+#import numpy as np
+import plot as plt
 #import sinaquotationsz
 
 
@@ -639,10 +642,11 @@ def get_db_network_data():
     result = result_dict
     return result
 
+
 def index_roller_auto():
     print('Line706 自动模式启动')
     loop_cal = 1  #计算累计循环次数
-    while ( True ):
+    while (True):
         unix = time.time()
         system_date_ymdhms_string = str(datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d %H:%M:%S'))  # 获取系统时间
         system_date_ymd_string = str(datetime.datetime.fromtimestamp(unix).strftime('%Y-%m-%d'))  # 获取系统时间日期
@@ -677,6 +681,7 @@ def index_roller_auto():
             time_isOK = if_time_is_ok(time_netwowk_hm,time_netwowk_ms)
             #print('time_isOK = ',time_isOK)
             if (time_isOK == True ):  # 网络时间OK，数据可以考虑录入# 获取数据库数据
+
                 #print('开始读取数据库数据')
                 db_list_old = data_read_from_db()  # class:list
                 #print('Line592 网络数据如下:',network_list)
@@ -806,6 +811,9 @@ def index_roller_auto():
                     print('交易额度不足，今日不交易，继续持有指数：', Hold_Code_Lst)
                     cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(Hold_ID_Lst)
                     update_db(cmd_text)
+                # 绘制曲线图
+                print('开始绘制曲线图')
+                plt.data_read_from_db()
 
 
 #============================================================================================================
