@@ -9,8 +9,7 @@ import sqlite3
 from tkinter import *       #引用Tk模块
 import tkinter.messagebox
 import urllib.request
-#import sinaquotationsz
-
+import sendemail
 
 class IndexData:
     ID = 0
@@ -264,7 +263,7 @@ def htStockBuy(StockCode,StockPrice,StockAmount):  # 买入
     user.buy(StockCode,price=StockPrice,amount=StockAmount)  # 买入
 
 
-# 大程序，卖出非计划持仓股票，买入计划持仓股票
+# 大程序，卖出非计划持仓股票，买入计划持仓股票; 发送通知邮件
 def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话则只卖出不买入
     print('进入华泰股票操作程序')
     user =easytrader.use('ht')#设置账户
@@ -422,7 +421,8 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
             print('进行再次交易')
             buy_aim_stock(stock_code_buy)  # 再次买入
             time.sleep(15)  # 暂停进程，给买入时间
-
+    # 发送通知邮件，Index Roller策略触发，请检查
+    sendemail.send_email()
 
 def ht_hold_510050():
     ht_hold_stock(510050)
@@ -640,7 +640,6 @@ def get_db_network_data():
                            '150023': {'now': price_now_150023, 'date': price_date_150023, 'time': price_time_150023}}
     result = result_dict
     return result
-
 
 def index_roller_auto():
     print('Line706 自动模式启动')
