@@ -262,14 +262,14 @@ def htStockBuy(StockCode,StockPrice,StockAmount):  # 买入
     user.prepare('ht.json')  # 自动登录
     user.buy(StockCode,price=StockPrice,amount=StockAmount)  # 买入
 
-
+cash_cal = 0.1 # 计算卖出股票后所能获得的现金
 # 大程序，卖出非计划持仓股票，买入计划持仓股票; 发送通知邮件
 def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话则只卖出不买入
     print('进入华泰股票操作程序')
     user =easytrader.use('ht')#设置账户
     user.prepare('ht.json')#自动登录
     position = user.position  # class:list一个股票持仓，list含有一个元素，两个股票持仓，list含有两个元素，每个元素都是dict类型
-
+    global cash_cal
     # 查询股票持仓，确认可卖出的股票代码、数量
     def ht_get_hold():
         print('开始查询账户持仓情况')
@@ -323,7 +323,10 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
         return result
 
     #TODO 先卖出持仓股票，保留100股持仓
+
+
     def sell_hold_stocks(stock_code_buy):
+        global cash_cal
         print('开始卖出非计划持仓股票，计划持仓股票代码：', stock_code_buy)
         hold_stock_dict = ht_get_hold()
         if stock_code_buy == 510050:
@@ -332,6 +335,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount159915') - 100
                 user.sell(str(159915), price=buy_price, amount=sell_amount)  # 卖出，保留100股持仓
                 print('卖出持仓股票：159915，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             else:
                 print('159915持仓为最低持仓')
@@ -340,6 +344,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount150023') - 100
                 user.sell(str(150023), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：150023，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             else:
                 print('150023持仓为最低持仓')
@@ -349,6 +354,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount510050') - 100
                 user.sell(str(510050), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：510050，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             else:
                 print('510050持仓为最低持仓')
@@ -357,6 +363,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount150023') - 100
                 user.sell(str(150023), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：150023，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             else:
                 print('150023持仓为最低持仓')
@@ -366,6 +373,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount510050') - 100
                 user.sell(str(510050), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：510050，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             else:
                 print('510050持仓为最低持仓')
@@ -374,6 +382,7 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount159915') - 100
                 user.sell(str(159915), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：159915，计划卖出价格：', buy_price,'，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             else:
                 print('159915持仓为最低持仓')
@@ -383,26 +392,30 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
                 sell_amount = hold_stock_dict.get('amount510050') - 100
                 user.sell(str(510050), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：510050，计划卖出价格：', buy_price,'，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             if hold_stock_dict.get('amount159915') > 100:
                 buy_price = get_price_buy(159915)
                 sell_amount = hold_stock_dict.get('amount159915') - 100
                 user.sell(str(159915), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：159915，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
             if hold_stock_dict.get('amount150023') > 100:
                 buy_price = get_price_buy(150023)
                 sell_amount = hold_stock_dict.get('amount150023') - 100
                 user.sell(str(150023), price=buy_price, amount=sell_amount)  # 卖出
                 print('卖出持仓股票：150023，计划卖出价格：', buy_price,'，计划卖出数量：', sell_amount)
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
                 time.sleep(20)  # 暂停进程，给卖出时间
-    sell_hold_stocks(stock_code_buy)
+    sell_hold_stocks(stock_code_buy)  # 卖出现有持仓，获得现金
+    print('计算现有现金额度为：', cash_cal)
 
     # 获取资金状况
     def get_enable_balance():  # 如何保证重新查询时，是最新的数据？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
         balance = user.balance
         enable_balance = balance[0].get('enable_balance')  # 可用余额
-        asset_balance = balance[0].get('asset_balance')  # 资产总额
+        #asset_balance = balance[0].get('asset_balance')  # 资产总额
         result = enable_balance
         return result
     enable_balance = get_enable_balance()
@@ -414,16 +427,22 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
 
     # 买入目标股票
     def buy_aim_stock(stock_code_buy):
+        global cash_cal
         sell_price = get_price_sell(stock_code_buy)
-        cash = get_enable_balance()  # 查询可交易的现金
-        print('查询可交易现金：', cash)
+        cash_look = get_enable_balance()  # 查询可交易的现金
+        print('查询可交易现金：', cash_look)
+        print('计算可交易现金：', cash_cal)
+        if cash_look < 3000:  # 此时查询到的可交易现金实际上是之前剩下的一点现金
+            cash = cash_cal + cash_look
+        else:  # 此时查询到的现金额度是正确的
+            cash = max(cash_look, cash_cal)
         buy_amount = cash // (sell_price * 100.035)  # 取整除法，考虑手续费
         # buy_amount = buy_amount_0//1  # 取整除法
         if buy_amount > 0:
             user.buy(str(stock_code_buy), price=sell_price, amount=buy_amount * 100)  # 买入
             print('买入计划持仓股票：', stock_code_buy, '，计划买入价格：', sell_price, '，计划买入数量：', buy_amount * 100)
         else:
-            print('现金不足，无法买入', stock_code_buy)
+            print('持有现金：', cash, '，现金不足，无法买入', stock_code_buy)
 
     if stock_code_buy == 0:
         print('收到清仓指令“stock_code_buy=0”，已执行清仓，不买入')
