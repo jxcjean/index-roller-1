@@ -407,16 +407,19 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
         return result
     enable_balance = get_enable_balance()
     if enable_balance > 1500:  # 现金剩余1500以上，持仓未完全卖出，再执行卖出程序卖出
+        print('现金额度：', enable_balance, '，再次卖出')
         sell_hold_stocks(stock_code_buy)  # 再次卖出持仓股票
+    else:
+        print('现金额度：', enable_balance, '，卖出成功')
 
     # 买入目标股票
     def buy_aim_stock(stock_code_buy):
         sell_price = get_price_sell(stock_code_buy)
         cash = get_enable_balance()  # 查询可交易的现金
-        print('查询可交易现金：',cash)
+        print('查询可交易现金：', cash)
         buy_amount = cash // (sell_price * 100.035)  # 取整除法，考虑手续费
         # buy_amount = buy_amount_0//1  # 取整除法
-        if (buy_amount > 0):
+        if buy_amount > 0:
             user.buy(str(stock_code_buy), price=sell_price, amount=buy_amount * 100)  # 买入
             print('买入计划持仓股票：', stock_code_buy, '，计划买入价格：', sell_price, '，计划买入数量：', buy_amount * 100)
         else:
@@ -721,6 +724,12 @@ def index_roller_auto():
                 dic_510050_lst = get_new_dict(3)
                 dic_159915_lst = get_new_dict(4)
                 dic_150023_lst = get_new_dict(5)
+                #print(dic_510050)
+                #print(dic_159915)
+                #print(dic_150023)
+                #print(dic_510050_lst)
+                #print(dic_159915_lst)
+                #print(dic_150023_lst)
                 buy_today = dic_510050.get('BuyToday')
                 def get_dea_high_now():  # 计算DEA今日斜率最高的指数
                         DEAH = 0
@@ -789,9 +798,8 @@ def index_roller_auto():
                     Hold_DEA_Lst = 0  # 昨日持仓代码的现在DEA数值
                     Hold_Code_Lst = 0
                     Hold_ID_Lst = 0
-                #TODO
-                print('DEAH_NOW=', DEAH_NOW)
-                print('Hold_DEA_Lst=', Hold_DEA_Lst)
+                print('DEAH_NOW=', DEAH_NOW, ' DEAH_CODE=', DEAH_CODE_NOW)
+                print('Hold_DEA_Lst=', Hold_DEA_Lst, ' Hold_Code_Lst=', Hold_Code_Lst)
                 print('DEAH_NOW - Hold_DEA_Lst=', DEAH_NOW - Hold_DEA_Lst)
                 if (buy_today==1):
                     print('Line618 交易额度有余，可以进行交易')
@@ -799,7 +807,7 @@ def index_roller_auto():
                         if (DEAH_NOW < 0.000006):
                             print('未达到建仓标准，保持空仓')
                         else:
-                            print('建仓，持有指数：',DEAH_CODE_NOW)
+                            print('建仓，持有指数：', DEAH_CODE_NOW)
                             cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(DEAH_ID_NOW)
                             update_db(cmd_text)
                             cmd_text = 'UPDATE data_table SET BuyToday = 0 WHERE ID=1'
@@ -839,8 +847,8 @@ def index_roller_auto():
                                 cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(Hold_ID_Lst)
                                 update_db(cmd_text)
                 else:
-                    print('DEAH=', DEAH_NOW, 'DEAH Code=', DEAH_CODE_NOW, 'DEAH ID=', DEAH_ID_NOW)
-                    print('Hold DEA=', Hold_DEA_Lst, 'Hold Code=', Hold_Code_Lst, 'Hold ID=', Hold_ID_Lst)
+                    #print('DEAH=', DEAH_NOW, 'DEAH Code=', DEAH_CODE_NOW, 'DEAH ID=', DEAH_ID_NOW)
+                    #print('Hold DEA=', Hold_DEA_Lst, 'Hold Code=', Hold_Code_Lst, 'Hold ID=', Hold_ID_Lst)
                     print('交易额度不足，今日不交易，继续持有指数：', Hold_Code_Lst)
                     cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(Hold_ID_Lst)
                     update_db(cmd_text)
