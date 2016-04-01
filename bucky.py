@@ -266,9 +266,10 @@ cash_cal = 0.1 # 计算卖出股票后所能获得的现金
 # 大程序，卖出非计划持仓股票，买入计划持仓股票; 发送通知邮件
 def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话则只卖出不买入
     print('进入华泰股票操作程序')
-    user =easytrader.use('ht')#设置账户
+    user = easytrader.use('ht')#设置账户
     user.prepare('ht.json')#自动登录
     position = user.position  # class:list一个股票持仓，list含有一个元素，两个股票持仓，list含有两个元素，每个元素都是dict类型
+    print('华泰账户设置完成')
     global cash_cal
     # 查询股票持仓，确认可卖出的股票代码、数量
     def ht_get_hold():
@@ -498,8 +499,8 @@ def dea_cal( PriceNow, KEMALst, SEMALst, LEMALst, DEALst,  xlALst, xlBLst, IsHol
     #print('DateLst=',DateLst)
     #print('DateNow=',DateNow)
     KEMAN = 16.0
-    SEMAN = 64.0
-    LEMAN = 64.0
+    SEMAN = 63.0
+    LEMAN = 63.0
     KEMA = KEMALst  # 昨日数据
     PTD = PriceNow  # 今日数据
     KEMA = KEMA * (KEMAN - 1) / (KEMAN + 1) + PTD * 2 / (KEMAN + 1)
@@ -515,7 +516,7 @@ def dea_cal( PriceNow, KEMALst, SEMALst, LEMALst, DEALst,  xlALst, xlBLst, IsHol
     xlB = xlALst
     xlC = xlBLst  #前三天SEMA斜率
     # 计算xlA的移动EMA均值
-    DEAN = 7.0
+    DEAN = 7.5
     DEA = DEALst  #SEMA斜率7日指数平滑异同均值
     PTD = xlA
     DEA = DEA * (DEAN - 1) / (DEAN + 1) + PTD * 2 / (DEAN + 1)
