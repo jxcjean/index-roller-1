@@ -1,3 +1,6 @@
+# encoding:utf-8
+__author__ = 'jxcjean'
+
 import easytrader
 import easyquotation
 import time
@@ -6,10 +9,11 @@ import sqlite3
 from tkinter import *       #引用Tk模块
 import tkinter.messagebox
 import urllib.request
-#import matplotlib.pyplot as plt
-#import numpy as np
-import plot as plt
-#import sinaquotationsz
+import sendemail
+import Datalog
+
+
+# TODO 跳空高开，增加灵敏度？？多计算一次？采用更小周期？？跳空低开 如何处理？？
 
 
 class IndexData:
@@ -263,17 +267,22 @@ def htStockBuy(StockCode,StockPrice,StockAmount):  # 买入
     user.prepare('ht.json')  # 自动登录
     user.buy(StockCode,price=StockPrice,amount=StockAmount)  # 买入
 
-
-# 大程序，卖出非计划持仓股票，买入计划持仓股票
+cash_cal = 0.1 # 计算卖出股票后所能获得的现金
+# 大程序，卖出非计划持仓股票，买入计划持仓股票; 发送通知邮件
 def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话则只卖出不买入
     print('进入华泰股票操作程序')
-    user =easytrader.use('ht')#设置账户
+    Datalog.write_log('进入华泰股票操作程序')
+    user = easytrader.use('ht')#设置账户
     user.prepare('ht.json')#自动登录
     position = user.position  # class:list一个股票持仓，list含有一个元素，两个股票持仓，list含有两个元素，每个元素都是dict类型
-
+    print('华泰账户设置完成')
+    Datalog.write_log('华泰账户设置完成')
+    global cash_cal
+    cash_cal = 1.0
     # 查询股票持仓，确认可卖出的股票代码、数量
     def ht_get_hold():
         print('开始查询账户持仓情况')
+        Datalog.write_log('开始查询账户持仓情况')
         # 查询股票持仓，确认可卖出的股票代码、数量
         hold_index_qty = len(position)  # 获取持仓指数数量
         hold_stock_code_1=0
@@ -282,6 +291,8 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
         hold_stock_amount_2=0
         hold_stock_code_3=0
         hold_stock_amount_3=0
+        hold_stock_code_4 = 0
+        hold_stock_amount_4 = 0
         if (hold_index_qty == 1):
             hold_stock_code_1 = position[0].get('stock_code')  # 获取持仓股票代码0
             hold_stock_amount_1 = position[0].get('current_amount')  # 获取持仓股票持股数0
@@ -297,6 +308,16 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
             hold_stock_amount_2 = position[1].get('current_amount')
             hold_stock_code_3 = position[2].get('stock_code')
             hold_stock_amount_3 = position[2].get('current_amount')
+        elif (hold_index_qty == 4):
+            print('hold_index_qty == 4')
+            hold_stock_code_1 = position[0].get('stock_code')  # 获取持仓股票代码0
+            hold_stock_amount_1 = position[0].get('current_amount')  # 获取持仓股票持股数0
+            hold_stock_code_2 = position[1].get('stock_code')
+            hold_stock_amount_2 = position[1].get('current_amount')
+            hold_stock_code_3 = position[2].get('stock_code')
+            hold_stock_amount_3 = position[2].get('current_amount')
+            hold_stock_code_4 = position[3].get('stock_code')
+            hold_stock_amount_4 = position[3].get('current_amount')
         #print('hold_index_qty: ',hold_index_qty)
         #print(position[0].get('stock_code'))
         #print(position[1])
@@ -306,8 +327,8 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
         #print(hold_stock_amount_2)
         #print(hold_stock_code_3)
         #print(hold_stock_amount_3)
-        hold_stock_list = [int(hold_stock_code_1), int(hold_stock_amount_1), int(hold_stock_code_2), int(hold_stock_amount_2), int(hold_stock_code_3), int(hold_stock_amount_3)]
-        hold_stock_dic = dict(amount511880=0,amount510050=0,amount159915=0,amount150023=0)
+        hold_stock_list = [int(hold_stock_code_1), int(hold_stock_amount_1), int(hold_stock_code_2), int(hold_stock_amount_2), int(hold_stock_code_3), int(hold_stock_amount_3), int(hold_stock_code_4), int(hold_stock_amount_4)]
+        hold_stock_dic = dict(amount511880=0, amount510050=0, amount159915=0, amount150023=0)
         #print('hold_stock_list', hold_stock_list)
         #print('511880 index: ', hold_stock_list.index(511880))
         if 511880 in hold_stock_list:
@@ -319,110 +340,173 @@ def ht_hold_stock(stock_code_buy):#卖一价买入510050，立即成交.0的话�
         if 150023 in hold_stock_list:
             hold_stock_dic['amount150023'] = hold_stock_list[hold_stock_list.index(150023)+1]
         result = hold_stock_dic
-        print('账户持仓情况如下：\n')
+        print('账户持仓情况如下：')
+        Datalog.write_log('账户持仓情况如下：')
         print(result)
+        Datalog.write_log(str(result))
         return result
 
-    # 先卖出持仓股票
+    #TODO 先卖出持仓股票，保留100股持仓
+
+
     def sell_hold_stocks(stock_code_buy):
+        global cash_cal
         print('开始卖出非计划持仓股票，计划持仓股票代码：', stock_code_buy)
+        Datalog.write_log('开始卖出非计划持仓股票，计划持仓股票代码：' + str(stock_code_buy))
         hold_stock_dict = ht_get_hold()
-        if (stock_code_buy == 510050):
-            if (hold_stock_dict.get('amount159915') != 0):
+        if stock_code_buy == 510050:
+            if hold_stock_dict.get('amount159915') > 100:
                 buy_price = get_price_buy(159915)
-                user.sell(str(159915),price=buy_price,amount=hold_stock_dict.get('amount159915'))  # 卖出
-                print('卖出持仓股票：159915，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount159915'))
-                time.sleep(20)  #暂停进程，给卖出时间
+                sell_amount = hold_stock_dict.get('amount159915') - 100
+                user.sell(str(159915), price=buy_price, amount=sell_amount)  # 卖出，保留100股持仓
+                print('卖出持仓股票：159915，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：159915，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
             else:
-                print('159915持仓为零')
-            if (hold_stock_dict.get('amount150023') != 0):
+                print('159915持仓为最低持仓')
+                Datalog.write_log('159915持仓为最低持仓')
+            if hold_stock_dict.get('amount150023') > 100:
                 buy_price = get_price_buy(150023)
-                user.sell(str(150023),price=buy_price,amount=hold_stock_dict.get('amount150023'))  # 卖出
-                print('卖出持仓股票：150023，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount150023'))
-                time.sleep(20)  #暂停进程，给卖出时间
+                sell_amount = hold_stock_dict.get('amount150023') - 100
+                user.sell(str(150023), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：150023，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：150023，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
             else:
-                print('150023持仓为零')
-        elif (stock_code_buy==159915):
-            if (hold_stock_dict.get('amount510050') != 0):
+                print('150023持仓为最低持仓')
+                Datalog.write_log('150023持仓为最低持仓')
+        elif stock_code_buy == 159915:
+            if hold_stock_dict.get('amount510050') > 100:
                 buy_price = get_price_buy(510050)
-                user.sell(str(510050),price=buy_price,amount=hold_stock_dict.get('amount510050'))  # 卖出
-                print('卖出持仓股票：510050，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount510050'))
-                time.sleep(20)  #暂停进程，给卖出时间
+                sell_amount = hold_stock_dict.get('amount510050') - 100
+                user.sell(str(510050), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：510050，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：510050，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
             else:
-                print('510050持仓为零')
-            if (hold_stock_dict.get('amount150023') != 0):
+                print('510050持仓为最低持仓')
+                Datalog.write_log('510050持仓为最低持仓')
+            if hold_stock_dict.get('amount150023') > 100:
                 buy_price = get_price_buy(150023)
-                user.sell(str(150023),price=buy_price,amount=hold_stock_dict.get('amount150023'))  # 卖出
-                print('卖出持仓股票：150023，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount150023'))
-                time.sleep(20)  #暂停进程，给卖出时间
+                sell_amount = hold_stock_dict.get('amount150023') - 100
+                user.sell(str(150023), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：150023，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：150023，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
             else:
-                print('150023持仓为零')
-        elif (stock_code_buy==150023):
-            if (hold_stock_dict.get('amount510050') != 0):
+                print('150023持仓为最低持仓')
+                Datalog.write_log('150023持仓为最低持仓')
+        elif stock_code_buy == 150023:
+            if hold_stock_dict.get('amount510050') > 100:
                 buy_price = get_price_buy(510050)
-                user.sell(str(510050),price=buy_price,amount=hold_stock_dict.get('amount510050'))  # 卖出
-                print('卖出持仓股票：510050，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount510050'))
-                time.sleep(20)  #暂停进程，给卖出时间
+                sell_amount = hold_stock_dict.get('amount510050') - 100
+                user.sell(str(510050), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：510050，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：510050，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
             else:
-                print('510050持仓为零')
-            if (hold_stock_dict.get('amount159915') != 0):
+                print('510050持仓为最低持仓')
+                Datalog.write_log('510050持仓为最低持仓')
+            if hold_stock_dict.get('amount159915') > 100:
                 buy_price = get_price_buy(159915)
-                user.sell(str(159915),price=buy_price,amount=hold_stock_dict.get('amount159915'))  # 卖出
-                print('卖出持仓股票：159915，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount159915'))
-                time.sleep(20)  #暂停进程，给卖出时间
+                sell_amount = hold_stock_dict.get('amount159915') - 100
+                user.sell(str(159915), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：159915，计划卖出价格：', buy_price,'，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：159915，计划卖出价格：' + str(buy_price),'，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
             else:
-                print('159915持仓为零')
-        elif (stock_code_buy==0):
-            if (hold_stock_dict.get('amount510050') != 0):
+                print('159915持仓为最低持仓')
+                Datalog.write_log('159915持仓为最低持仓')
+        elif stock_code_buy == 0:  # 清仓指令
+            if hold_stock_dict.get('amount510050') > 100:
                 buy_price = get_price_buy(510050)
-                user.sell(str(510050),price=buy_price,amount=hold_stock_dict.get('amount510050'))  # 卖出
-                print('卖出持仓股票：510050，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount510050'))
-                time.sleep(20)  #暂停进程，给卖出时间
-            if (hold_stock_dict.get('amount159915') != 0):
+                sell_amount = hold_stock_dict.get('amount510050') - 100
+                user.sell(str(510050), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：510050，计划卖出价格：', buy_price,'，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：510050，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
+            if hold_stock_dict.get('amount159915') > 100:
                 buy_price = get_price_buy(159915)
-                user.sell(str(159915),price=buy_price,amount=hold_stock_dict.get('amount159915'))  # 卖出
-                print('卖出持仓股票：159915，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount159915'))
-                time.sleep(20)  #暂停进程，给卖出时间
-            if (hold_stock_dict.get('amount150023') != 0):
+                sell_amount = hold_stock_dict.get('amount159915') - 100
+                user.sell(str(159915), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：159915，计划卖出价格：', buy_price, '，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：159915，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
+            if hold_stock_dict.get('amount150023') > 100:
                 buy_price = get_price_buy(150023)
-                user.sell(str(150023),price=buy_price,amount=hold_stock_dict.get('amount150023'))  # 卖出
-                print('卖出持仓股票：150023，计划卖出价格：',buy_price,'，计划卖出数量：',hold_stock_dict.get('amount150023'))
-                time.sleep(20)  #暂停进程，给卖出时间
-    sell_hold_stocks(stock_code_buy)
+                sell_amount = hold_stock_dict.get('amount150023') - 100
+                user.sell(str(150023), price=buy_price, amount=sell_amount)  # 卖出
+                print('卖出持仓股票：150023，计划卖出价格：', buy_price,'，计划卖出数量：', sell_amount)
+                Datalog.write_log('卖出持仓股票：150023，计划卖出价格：' + str(buy_price) + '，计划卖出数量：' + str(sell_amount))
+                cash_cal = buy_price * sell_amount * (1 - 0.00035)
+                time.sleep(20)  # 暂停进程，给卖出时间
+    sell_hold_stocks(stock_code_buy)  # 卖出现有持仓，获得现金
+    print('计算现有现金额度为：', cash_cal)
+    Datalog.write_log('计算现有现金额度为：' + str(cash_cal))
 
     # 获取资金状况
     def get_enable_balance():  # 如何保证重新查询时，是最新的数据？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
         balance = user.balance
         enable_balance = balance[0].get('enable_balance')  # 可用余额
-        asset_balance = balance[0].get('asset_balance')  # 资产总额
+        #asset_balance = balance[0].get('asset_balance')  # 资产总额
         result = enable_balance
         return result
     enable_balance = get_enable_balance()
-    if (enable_balance > 1000):  # 持仓未完全卖出，再执行卖出程序卖出
+    if enable_balance < 1500:  # 现金剩余1500以上，持仓未完全卖出，再执行卖出程序卖出
+        print('现金额度：', enable_balance, '，再次卖出')
+        Datalog.write_log('现金额度：'+ str(enable_balance) + '，再次卖出')
         sell_hold_stocks(stock_code_buy)  # 再次卖出持仓股票
-
+    else:
+        print('现金额度：', enable_balance, '，卖出成功')
+        Datalog.write_log('现金额度：' + str(enable_balance) + '，卖出成功')
 
     # 买入目标股票
     def buy_aim_stock(stock_code_buy):
+        global cash_cal
         sell_price = get_price_sell(stock_code_buy)
-        cash = get_enable_balance()  # 查询可交易的现金
-        print('查询可交易现金：',cash)
+        cash_look = get_enable_balance()  # 查询可交易的现金
+        print('查询可交易现金：', cash_look)
+        Datalog.write_log('查询可交易现金：' + str(cash_look))
+        print('计算可交易现金：', cash_cal)
+        Datalog.write_log('计算可交易现金：' + str(cash_cal))
+        if cash_look < 3000:  # 此时查询到的可交易现金实际上是之前剩下的一点现金
+            cash = cash_cal + cash_look
+        else:  # 此时查询到的现金额度是正确的
+            cash = max(cash_look, cash_cal)
         buy_amount = cash // (sell_price * 100.035)  # 取整除法，考虑手续费
         # buy_amount = buy_amount_0//1  # 取整除法
-        if (buy_amount > 0):
+        if buy_amount > 0:
             user.buy(str(stock_code_buy), price=sell_price, amount=buy_amount * 100)  # 买入
             print('买入计划持仓股票：', stock_code_buy, '，计划买入价格：', sell_price, '，计划买入数量：', buy_amount * 100)
-    if (stock_code_buy==0):
+            Datalog.write_log('买入计划持仓股票：' + str(stock_code_buy) + '，计划买入价格：' + str(sell_price) + '，计划买入数量：' + str(buy_amount * 100))
+        else:
+            print('持有现金：', cash, '，现金不足，无法买入', stock_code_buy)
+            Datalog.write_log('持有现金：' + str(cash) + '，现金不足，无法买入' + str(stock_code_buy))
+
+    if stock_code_buy == 0:
         print('收到清仓指令“stock_code_buy=0”，已执行清仓，不买入')
+        Datalog.write_log('收到清仓指令“stock_code_buy=0”，已执行清仓，不买入')
     else:
+        time.sleep(15)  # 暂停进程，给卖出时间
         buy_aim_stock(stock_code_buy)
-        time.sleep(20)  #暂停进程，给买入时间
+        time.sleep(30)  # 暂停进程，给买入时间
         cash_2 = get_enable_balance()  # 再次查询资产情况
         print('再次查询,判断是否再次买入，目前可交易现金：', cash_2)
-        if (cash_2>1000):
+        Datalog.write_log('再次查询,判断是否再次买入，目前可交易现金：' + str(cash_2))
+        if cash_2 > 1000:
             print('进行再次交易')
+            Datalog.write_log('进行再次交易')
             buy_aim_stock(stock_code_buy)  # 再次买入
-            time.sleep(15)  # 暂停进程，给买入时间
+            time.sleep(5)  # 暂停进程，给买入时间
+    # 发送通知邮件，Index Roller策略触发，请检查
 
 
 def ht_hold_510050():
@@ -464,8 +548,8 @@ def dea_cal( PriceNow, KEMALst, SEMALst, LEMALst, DEALst,  xlALst, xlBLst, IsHol
     #print('DateLst=',DateLst)
     #print('DateNow=',DateNow)
     KEMAN = 16.0
-    SEMAN = 64.0
-    LEMAN = 64.0
+    SEMAN = 63.0
+    LEMAN = 63.0
     KEMA = KEMALst  # 昨日数据
     PTD = PriceNow  # 今日数据
     KEMA = KEMA * (KEMAN - 1) / (KEMAN + 1) + PTD * 2 / (KEMAN + 1)
@@ -481,7 +565,7 @@ def dea_cal( PriceNow, KEMALst, SEMALst, LEMALst, DEALst,  xlALst, xlBLst, IsHol
     xlB = xlALst
     xlC = xlBLst  #前三天SEMA斜率
     # 计算xlA的移动EMA均值
-    DEAN = 7.0
+    DEAN = 7.5
     DEA = DEALst  #SEMA斜率7日指数平滑异同均值
     PTD = xlA
     DEA = DEA * (DEAN - 1) / (DEAN + 1) + PTD * 2 / (DEAN + 1)
@@ -642,9 +726,8 @@ def get_db_network_data():
     result = result_dict
     return result
 
-
 def index_roller_auto():
-    print('Line706 自动模式启动')
+    Datalog.write_log('Line706 自动模式启动')
     loop_cal = 1  #计算累计循环次数
     while (True):
         unix = time.time()
@@ -653,13 +736,14 @@ def index_roller_auto():
         system_time_hms_string = str(datetime.datetime.fromtimestamp(unix).strftime('%H:%M:%S'))  # 获取系统时间分钟秒时间
         # 获取网络数据，间隔2秒
         #TODO 修改循环时间
-        time_loop = 3
+        time_loop = 2
         time.sleep(time_loop)  # 间隔2秒执行
         #print('Line696 进入While循环次数：', loop_cal)
         loop_cal = loop_cal + 1
         sina_data_dict = get_db_network_data()  # 获取网络数据，返回list格式
         if (sina_data_dict == ''):
             print(system_date_ymdhms_string, ' Network error')
+            Datalog.write_log(str(system_date_ymdhms_string) + ' Network error')
         else:  # 网络正常，执行程序
             price_now_510050 = sina_data_dict.get('510050').get('now')
             price_date_510050 = sina_data_dict.get('510050').get('date')
@@ -677,18 +761,18 @@ def index_roller_auto():
                             (150023, price_now_150023, price_date_150023, price_time_150023)]
             # 判断数据时间是否可录入
             print('Line568 ',system_date_ymdhms_string, ' 网络数据如下', network_list)  # 分钟
+            Datalog.write_log('网络数据：' + str(network_list))
             time_isOK = False
             time_isOK = if_time_is_ok(time_netwowk_hm,time_netwowk_ms)
             #print('time_isOK = ',time_isOK)
             if (time_isOK == True ):  # 网络时间OK，数据可以考虑录入# 获取数据库数据
-
                 #print('开始读取数据库数据')
                 db_list_old = data_read_from_db()  # class:list
                 #print('Line592 网络数据如下:',network_list)
                 db_list_new = get_new_db_data(db_list_old,network_list)  # 新的数据，可以写入数据库
                 clear_database()  # 清空数据库
-                print('Line596 数据库清空完成')
-                print('Line597 开始写入新数据到数据库')
+                Datalog.write_log('Line596 数据库清空完成')
+                Datalog.write_log('Line597 开始写入新数据到数据库')
                 for i in range(0,198):
                     if (db_list_new[i] != 0):
                         list_dic_key = ['ID', 'Code', 'Price', 'Date', 'Time', 'KEMA', 'SEMA', 'LEMA', 'DIF', 'xlA', 'xlB', 'xlC', 'IsHold', 'KEMAH', 'PriceH', 'DEA','BuyToday']
@@ -697,9 +781,9 @@ def index_roller_auto():
                         data_insert(list_dic)
                     else:
                         break
-                print('Line601 新数据写入数据库完成')
+                Datalog.write_log('Line601 新数据写入数据库完成')
                 # 是否进行交易
-                print('Line604 开始判断是否交易')
+                Datalog.write_log('Line604 开始判断是否交易')
                 def get_new_dict(i):  # 获取指定ID在数据库中的数据
                     list_dic_key = ['ID', 'Code', 'Price', 'Date', 'Time', 'KEMA', 'SEMA', 'LEMA', 'DIF', 'xlA', 'xlB', 'xlC', 'IsHold', 'KEMAH', 'PriceH', 'DEA','BuyToday']
                     list_dic_value = list(db_list_new[i])
@@ -711,6 +795,12 @@ def index_roller_auto():
                 dic_510050_lst = get_new_dict(3)
                 dic_159915_lst = get_new_dict(4)
                 dic_150023_lst = get_new_dict(5)
+                #print(dic_510050)
+                #print(dic_159915)
+                #print(dic_150023)
+                #print(dic_510050_lst)
+                #print(dic_159915_lst)
+                #print(dic_150023_lst)
                 buy_today = dic_510050.get('BuyToday')
                 def get_dea_high_now():  # 计算DEA今日斜率最高的指数
                         DEAH = 0
@@ -731,7 +821,7 @@ def index_roller_auto():
                             DEAH = DEA_150023
                             DEAH_CODE = 150023
                             DEAH_ID = 3
-                        result = dict(DEAH=DEAH, DEAH_CODE=DEAH_CODE,DEAH_ID=DEAH_ID)
+                        result = dict(DEAH=DEAH, DEAH_CODE=DEAH_CODE, DEAH_ID=DEAH_ID, DEA_510050=DEA_510050, DEA_159915=DEA_159915, DEA_150023=DEA_150023)
                         return result
                 def get_hold_lst():
                         Hold_DEA_Lst = 0
@@ -760,16 +850,38 @@ def index_roller_auto():
                 DEAH_CODE_NOW = int(get_dea_high_n.get('DEAH_CODE'))
                 DEAH_ID_NOW = int(get_dea_high_n.get('DEAH_ID'))
                 get_hold = get_hold_lst()
-                Hold_DEA_Lst = get_hold.get('HOLD_DEA')
-                Hold_Code_Lst = int(get_hold.get('HOLD_CODE'))
-                Hold_ID_Lst = int(get_hold.get('HOLD_ID'))
+                Hold_DEA = get_hold.get('HOLD_DEA')  # 昨日持仓代码的昨日DEA数值
+                Hold_Code = int(get_hold.get('HOLD_CODE'))  # 昨日持仓代码
+                Hold_ID = int(get_hold.get('HOLD_ID'))
+                if Hold_Code == 510050:
+                    Hold_DEA_Lst = get_dea_high_n.get('DEA_510050')  # 昨日持仓代码的现在DEA数值
+                    Hold_Code_Lst = 510050
+                    Hold_ID_Lst = 1
+                elif Hold_Code == 159915:
+                    Hold_DEA_Lst = get_dea_high_n.get('DEA_159915')  # 昨日持仓代码的现在DEA数值
+                    Hold_Code_Lst = 159915
+                    Hold_ID_Lst = 2
+                elif Hold_Code == 150023:
+                    Hold_DEA_Lst = get_dea_high_n.get('DEA_150023')  # 昨日持仓代码的现在DEA数值
+                    Hold_Code_Lst = 150023
+                    Hold_ID_Lst = 3
+                else:
+                    Hold_DEA_Lst = 0  # 昨日持仓代码的现在DEA数值
+                    Hold_Code_Lst = 0
+                    Hold_ID_Lst = 0
+                print('DEAH_NOW=', DEAH_NOW, ' DEAH_CODE=', DEAH_CODE_NOW)
+                print('Hold_DEA_Lst=', Hold_DEA_Lst, ' Hold_Code_Lst=', Hold_Code_Lst)
+                print('DEAH_NOW - Hold_DEA_Lst=', DEAH_NOW - Hold_DEA_Lst)
                 if (buy_today==1):
                     print('Line618 交易额度有余，可以进行交易')
+                    Datalog.write_log('交易额度有余，可以进行交易')
                     if (Hold_Code_Lst==0):  # 昨日空仓
                         if (DEAH_NOW < 0.000006):
                             print('未达到建仓标准，保持空仓')
+                            Datalog.write_log('未达到建仓标准，保持空仓')
                         else:
-                            print('建仓，持有指数：',DEAH_CODE_NOW)
+                            print('建仓，持有指数：', DEAH_CODE_NOW)
+                            Datalog.write_log('建仓，持有指数：' + str(DEAH_CODE_NOW))
                             cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(DEAH_ID_NOW)
                             update_db(cmd_text)
                             cmd_text = 'UPDATE data_table SET BuyToday = 0 WHERE ID=1'
@@ -778,20 +890,27 @@ def index_roller_auto():
                             update_db(cmd_text)
                             cmd_text = 'UPDATE data_table SET BuyToday = 0 WHERE ID=3'
                             update_db(cmd_text)
-                            ht_hold_stock(DEAH_CODE_NOW)
+                            #ht_hold_stock(DEAH_CODE_NOW)
+                            sendemail.send_email(DEAH_CODE_NOW)
                     else:  # 昨日持仓
-                        if (DEAH_NOW < 0.000006):  # 空仓
+                        if DEAH_NOW < 0.000006:  # 空仓
                             print('空仓,卖出持有指数')
+                            Datalog.write_log('空仓,卖出持有指数')
                             cmd_text = 'UPDATE data_table SET BuyToday = 1 WHERE ID=1'
                             update_db(cmd_text)
                             cmd_text = 'UPDATE data_table SET BuyToday = 1 WHERE ID=2'
                             update_db(cmd_text)
                             cmd_text = 'UPDATE data_table SET BuyToday = 1 WHERE ID=3'
                             update_db(cmd_text)
-                            ht_hold_stock(0)
+                            #ht_hold_stock(0)
+                            sendemail.send_email(0)
                         else:
-                            if (DEAH_NOW - Hold_DEA_Lst > 0.00015):
+                            #print('DEAH_NOW=', DEAH_NOW)
+                            #print('Hold_DEA_Lst=', Hold_DEA_Lst)
+                            #print('DEAH_NOW - Hold_DEA_Lst=', DEAH_NOW - Hold_DEA_Lst)
+                            if DEAH_NOW - Hold_DEA_Lst >= 0.00015:
                                 print('换仓至指数：', DEAH_CODE_NOW)
+                                Datalog.write_log('换仓至指数：' + str(DEAH_CODE_NOW))
                                 cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(DEAH_ID_NOW)
                                 update_db(cmd_text)
                                 cmd_text = 'UPDATE data_table SET BuyToday = 0 WHERE ID=1'
@@ -800,20 +919,20 @@ def index_roller_auto():
                                 update_db(cmd_text)
                                 cmd_text = 'UPDATE data_table SET BuyToday = 0 WHERE ID=3'
                                 update_db(cmd_text)
-                                ht_hold_stock(DEAH_CODE_NOW)
+                                #ht_hold_stock(DEAH_CODE_NOW)
+                                sendemail.send_email(DEAH_CODE_NOW)
                             else:
                                 print('未达到切换标准，继续持有指数：', Hold_Code_Lst)
+                                Datalog.write_log('未达到切换标准，继续持有指数：' + str(Hold_Code_Lst))
                                 cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(Hold_ID_Lst)
                                 update_db(cmd_text)
                 else:
-                    print('DEAH=',DEAH_NOW,'DEAH Code=',DEAH_CODE_NOW,'DEAH ID=',DEAH_ID_NOW)
-                    print('Hold DEA=',Hold_DEA_Lst,'Hold Code=',Hold_Code_Lst,'Hold ID=',Hold_ID_Lst)
+                    #print('DEAH=', DEAH_NOW, 'DEAH Code=', DEAH_CODE_NOW, 'DEAH ID=', DEAH_ID_NOW)
+                    #print('Hold DEA=', Hold_DEA_Lst, 'Hold Code=', Hold_Code_Lst, 'Hold ID=', Hold_ID_Lst)
                     print('交易额度不足，今日不交易，继续持有指数：', Hold_Code_Lst)
+                    Datalog.write_log('交易额度不足，今日不交易，继续持有指数：' + str(Hold_Code_Lst))
                     cmd_text = 'UPDATE data_table SET IsHold = 1 WHERE ID=' + str(Hold_ID_Lst)
                     update_db(cmd_text)
-                # 绘制曲线图
-                print('开始绘制曲线图')
-                plt.data_read_from_db()
 
 
 #============================================================================================================
